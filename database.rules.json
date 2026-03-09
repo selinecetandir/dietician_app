@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "users": {
+      ".indexOn": ["role"],
+      ".read": true,
+      ".write": true
+    },
+    "appointments": {
+      ".indexOn": ["patientId", "dietitianId"],
+      ".read": true,
+      ".write": true
+    },
+    "timeSlots": {
+      ".indexOn": ["dietitianId"],
+      ".read": true,
+      ".write": true
+    },
+    "dietPlans": {
+      ".indexOn": ["patientId"],
+      ".read": true,
+      ".write": true
+    },
+    "weightEntries": {
+      ".indexOn": ["patientId"],
+      ".read": true,
+      ".write": true
+    }
+  }
+}
