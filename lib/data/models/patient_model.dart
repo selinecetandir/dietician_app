@@ -8,6 +8,7 @@ class PatientModel extends UserModel {
   final double height;
   final PatientGoal goal;
   final String? allergies;
+  final String? diet;
   final String? healthCondition;
   final DateTime birthDate;
 
@@ -23,6 +24,7 @@ class PatientModel extends UserModel {
     required this.goal,
     required this.birthDate,
     this.allergies,
+    this.diet,
     this.healthCondition,
   }) : super(role: UserRole.patient);
 

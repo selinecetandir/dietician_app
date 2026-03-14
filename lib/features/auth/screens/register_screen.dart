@@ -31,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _allergyCtrl = TextEditingController();
+  final _dietCtrl = TextEditingController();
   final _healthCtrl = TextEditingController();
   Gender? _selectedGender;
   PatientGoal? _selectedGoal;
@@ -64,6 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _allergyCtrl.dispose();
+    _dietCtrl.dispose();
     _healthCtrl.dispose();
     super.dispose();
   }
@@ -121,6 +123,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               allergies: _allergyCtrl.text.trim().isEmpty
                   ? null
                   : _allergyCtrl.text.trim(),
+              diet: _dietCtrl.text.trim().isEmpty
+                  ? null
+                  : _dietCtrl.text.trim(),
               healthCondition: _healthCtrl.text.trim().isEmpty
                   ? null
                   : _healthCtrl.text.trim(),
@@ -132,15 +137,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful! Please log in.')),
+        const SnackBar(
+          content: Text('Registration successful! Please log in.'),
+        ),
       );
 
       Navigator.pop(context);
     } on Exception catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -174,7 +181,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   icon: Icons.email_outlined,
                   keyboard: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Email is required';
                     if (!v.contains('@')) return 'Enter a valid email';
                     return null;
                   },
@@ -187,9 +195,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
@@ -210,16 +220,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirm
-                          ? Icons.visibility_off
-                          : Icons.visibility),
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Please confirm your password';
-                    if (v != _passwordCtrl.text) return 'Passwords do not match';
+                    if (v == null || v.isEmpty)
+                      return 'Please confirm your password';
+                    if (v != _passwordCtrl.text)
+                      return 'Passwords do not match';
                     return null;
                   },
                 ),
@@ -266,8 +280,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(
                     'Gender',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -329,15 +343,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             border: const OutlineInputBorder(),
                             hintText: _selectedBirthDate != null
                                 ? '${_selectedBirthDate!.day.toString().padLeft(2, '0')}/'
-                                  '${_selectedBirthDate!.month.toString().padLeft(2, '0')}/'
-                                  '${_selectedBirthDate!.year}'
+                                      '${_selectedBirthDate!.month.toString().padLeft(2, '0')}/'
+                                      '${_selectedBirthDate!.year}'
                                 : 'Tap to select',
                           ),
                           controller: TextEditingController(
                             text: _selectedBirthDate != null
                                 ? '${_selectedBirthDate!.day.toString().padLeft(2, '0')}/'
-                                  '${_selectedBirthDate!.month.toString().padLeft(2, '0')}/'
-                                  '${_selectedBirthDate!.year}'
+                                      '${_selectedBirthDate!.month.toString().padLeft(2, '0')}/'
+                                      '${_selectedBirthDate!.year}'
                                 : '',
                           ),
                           validator: (_) {
@@ -397,8 +411,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(
                     'What Is Your Main Goal?',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -409,10 +423,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return ChoiceChip(
                         label: Text(_goalLabels[goal]!),
                         selected: isSelected,
-                        onSelected: (_) =>
-                            setState(() => _selectedGoal = goal),
-                        selectedColor:
-                            colorScheme.primaryContainer,
+                        onSelected: (_) => setState(() => _selectedGoal = goal),
+                        selectedColor: colorScheme.primaryContainer,
                         labelStyle: TextStyle(
                           color: isSelected
                               ? colorScheme.onPrimaryContainer
@@ -423,9 +435,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         showCheckmark: false,
                         avatar: isSelected
-                            ? Icon(Icons.check_circle,
+                            ? Icon(
+                                Icons.check_circle,
                                 size: 18,
-                                color: colorScheme.primary)
+                                color: colorScheme.primary,
+                              )
                             : null,
                       );
                     }).toList(),
@@ -440,6 +454,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       labelText: 'Allergies (if any)',
                       hintText: 'e.g. Peanuts, gluten, lactose...',
                       prefixIcon: Icon(Icons.warning_amber_outlined),
+                      border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Diet
+                  TextFormField(
+                    controller: _dietCtrl,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Diet preferences (if any)',
+                      hintText: 'e.g. Vegeterain, vegan, pescetarian...',
+                      prefixIcon: Icon(Icons.restaurant_menu_outlined),
                       border: OutlineInputBorder(),
                       alignLabelWithHint: true,
                     ),
@@ -557,13 +585,18 @@ class _GenderButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: selected ? color : Theme.of(context).colorScheme.outline),
+              Icon(
+                icon,
+                color: selected ? color : Theme.of(context).colorScheme.outline,
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                  color: selected ? color : Theme.of(context).colorScheme.onSurface,
+                  color: selected
+                      ? color
+                      : Theme.of(context).colorScheme.onSurface,
                   fontSize: 15,
                 ),
               ),
