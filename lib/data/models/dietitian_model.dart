@@ -5,6 +5,8 @@ class DietitianModel extends UserModel {
   final String title;
   final String clinicName;
   final String specialization;
+  final String? education;
+  final String? certificates;
 
   const DietitianModel({
     required super.id,
@@ -14,5 +16,7 @@ class DietitianModel extends UserModel {
     required this.title,
     required this.clinicName,
     required this.specialization,
+    this.education,
+    this.certificates,
   }) : super(role: UserRole.dietitian);
 }

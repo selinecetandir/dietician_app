@@ -24,6 +24,10 @@
       ".indexOn": ["patientId"],
       ".read": true,
       ".write": true
+    },
+    "notifications": {
+      ".read": true,
+      ".write": true
     }
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/enums/enums.dart';
 import '../../../data/models/appointment_model.dart';
+import '../../../data/models/notification_model.dart';
 import '../../../data/repository_locator.dart';
 import '../../../utils/user_parser.dart';
 
@@ -57,11 +58,32 @@ class _AppointmentRequestsScreenState
     });
   }
 
-  Future<void> _updateStatus(String id, AppointmentStatus status) async {
+  Future<void> _updateStatus(
+      String id, AppointmentStatus status, String patientId) async {
     await RepositoryLocator.appointment.updateStatus(id, status);
+
+    final user = RepositoryLocator.auth.currentUser;
+    final isApproved = status == AppointmentStatus.approved;
+
+    await RepositoryLocator.notification.createNotification(
+      NotificationModel(
+        id: '',
+        recipientId: patientId,
+        type: isApproved
+            ? NotificationType.appointmentApproved
+            : NotificationType.appointmentRejected,
+        title: isApproved ? 'Appointment Approved' : 'Appointment Rejected',
+        message: isApproved
+            ? '${user?.name ?? 'Your dietitian'} approved your appointment request.'
+            : '${user?.name ?? 'Your dietitian'} rejected your appointment request.',
+        createdAt: DateTime.now(),
+        referenceId: id,
+      ),
+    );
+
     await _load();
     if (mounted) {
-      final label = status == AppointmentStatus.approved ? 'approved' : 'rejected';
+      final label = isApproved ? 'approved' : 'rejected';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Appointment $label.')),
       );
@@ -197,7 +219,7 @@ class _AppointmentRequestsScreenState
                                   children: [
                                     OutlinedButton.icon(
                                       onPressed: () => _updateStatus(
-                                          a.id, AppointmentStatus.rejected),
+                                          a.id, AppointmentStatus.rejected, a.patientId),
                                       icon: const Icon(Icons.close, size: 18),
                                       label: const Text('Reject'),
                                       style: OutlinedButton.styleFrom(
@@ -207,7 +229,7 @@ class _AppointmentRequestsScreenState
                                     const SizedBox(width: 8),
                                     FilledButton.icon(
                                       onPressed: () => _updateStatus(
-                                          a.id, AppointmentStatus.approved),
+                                          a.id, AppointmentStatus.approved, a.patientId),
                                       icon: const Icon(Icons.check, size: 18),
                                       label: const Text('Approve'),
                                     ),

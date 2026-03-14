@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/enums/enums.dart';
 import '../../../data/models/diet_plan_model.dart';
+import '../../../data/models/notification_model.dart';
 import '../../../data/repository_locator.dart';
 
 class AddDietPlanScreen extends StatefulWidget {
@@ -141,6 +143,21 @@ class _AddDietPlanScreenState extends State<AddDietPlanScreen> {
     } else {
       await RepositoryLocator.dietPlan.addDietPlan(plan);
     }
+
+    await RepositoryLocator.notification.createNotification(
+      NotificationModel(
+        id: '',
+        recipientId: widget.patientId,
+        type: _isEditing
+            ? NotificationType.dietPlanUpdated
+            : NotificationType.dietPlanCreated,
+        title: _isEditing ? 'Diet Plan Updated' : 'New Diet Plan',
+        message: _isEditing
+            ? '${user.name} updated your diet plan "${plan.title}".'
+            : '${user.name} created a new diet plan "${plan.title}" for you.',
+        createdAt: DateTime.now(),
+      ),
+    );
 
     if (!mounted) return;
 

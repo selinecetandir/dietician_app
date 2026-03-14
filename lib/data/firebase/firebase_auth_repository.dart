@@ -61,6 +61,16 @@ class FirebaseAuthRepository implements AuthRepository {
     _cachedUser = null;
   }
 
+  Future<void> updateUserProfile(Map<String, dynamic> updates) async {
+    final user = _cachedUser;
+    if (user == null) return;
+    await _service.usersRef.child(user.id).update(updates);
+    final snap = await _service.usersRef.child(user.id).get();
+    if (snap.exists && snap.value != null) {
+      _cachedUser = _userFromSnapshot(user.id, snap.value!);
+    }
+  }
+
   Future<UserModel?> tryAutoLogin() async {
     final firebaseUser = _service.auth.currentUser;
     if (firebaseUser == null) return null;
@@ -96,6 +106,8 @@ class FirebaseAuthRepository implements AuthRepository {
         'title': user.title,
         'clinicName': user.clinicName,
         'specialization': user.specialization,
+        'education': user.education ?? '',
+        'certificates': user.certificates ?? '',
       });
     }
 
@@ -130,6 +142,8 @@ class FirebaseAuthRepository implements AuthRepository {
         title: data['title'] as String? ?? '',
         clinicName: data['clinicName'] as String? ?? '',
         specialization: data['specialization'] as String? ?? '',
+        education: _nullIfEmpty(data['education']),
+        certificates: _nullIfEmpty(data['certificates']),
       );
     }
   }
@@ -165,6 +179,8 @@ class FirebaseAuthRepository implements AuthRepository {
         title: user.title,
         clinicName: user.clinicName,
         specialization: user.specialization,
+        education: user.education,
+        certificates: user.certificates,
       );
     }
     return user;

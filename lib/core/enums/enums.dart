@@ -13,3 +13,11 @@ enum PatientGoal {
   buildMuscle,
   eatBalanced,
 }
+
+enum NotificationType {
+  appointmentRequested,
+  appointmentApproved,
+  appointmentRejected,
+  dietPlanCreated,
+  dietPlanUpdated,
+}

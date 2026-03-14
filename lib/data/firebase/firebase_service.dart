@@ -14,4 +14,5 @@ class FirebaseService {
   DatabaseReference get timeSlotsRef => database.ref('timeSlots');
   DatabaseReference get dietPlansRef => database.ref('dietPlans');
   DatabaseReference get weightEntriesRef => database.ref('weightEntries');
+  DatabaseReference get notificationsRef => database.ref('notifications');
 }

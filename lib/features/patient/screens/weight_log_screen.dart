@@ -78,6 +78,7 @@ class _WeightLogScreenState extends State<WeightLogScreen> {
         note: _noteCtrl.text.trim().isNotEmpty ? _noteCtrl.text.trim() : null,
       );
       await RepositoryLocator.weight.addWeightEntry(entry);
+      await RepositoryLocator.firebaseAuth.updateUserProfile({'weight': weight});
       await _load();
 
       if (mounted) {

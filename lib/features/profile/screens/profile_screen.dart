@@ -5,9 +5,14 @@ import '../../../data/repository_locator.dart';
 import '../../../data/models/dietitian_model.dart';
 import '../../../data/models/patient_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   static const _goalLabels = <PatientGoal, String>{
     PatientGoal.loseWeight: 'Lose Weight',
     PatientGoal.gainWeight: 'Gain Weight',
@@ -15,6 +20,83 @@ class ProfileScreen extends StatelessWidget {
     PatientGoal.buildMuscle: 'Build Muscle',
     PatientGoal.eatBalanced: 'Eat Balanced',
   };
+
+  void _refresh() => setState(() {});
+
+  Future<void> _showEditPatientSheet(PatientModel patient) async {
+    final nameCtrl = TextEditingController(text: patient.name);
+    final phoneCtrl = TextEditingController(text: patient.phone);
+    final weightCtrl =
+        TextEditingController(text: patient.weight.toStringAsFixed(1));
+    final heightCtrl =
+        TextEditingController(text: patient.height.toStringAsFixed(0));
+    final allergyCtrl =
+        TextEditingController(text: patient.allergies ?? '');
+    final healthCtrl =
+        TextEditingController(text: patient.healthCondition ?? '');
+    PatientGoal selectedGoal = patient.goal;
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _EditPatientSheet(
+        nameCtrl: nameCtrl,
+        phoneCtrl: phoneCtrl,
+        weightCtrl: weightCtrl,
+        heightCtrl: heightCtrl,
+        allergyCtrl: allergyCtrl,
+        healthCtrl: healthCtrl,
+        initialGoal: selectedGoal,
+        goalLabels: _goalLabels,
+      ),
+    );
+
+    nameCtrl.dispose();
+    phoneCtrl.dispose();
+    weightCtrl.dispose();
+    heightCtrl.dispose();
+    allergyCtrl.dispose();
+    healthCtrl.dispose();
+
+    if (saved == true) _refresh();
+  }
+
+  Future<void> _showEditDietitianSheet(DietitianModel dietitian) async {
+    final nameCtrl = TextEditingController(text: dietitian.name);
+    final titleCtrl = TextEditingController(text: dietitian.title);
+    final clinicCtrl = TextEditingController(text: dietitian.clinicName);
+    final specCtrl = TextEditingController(text: dietitian.specialization);
+    final eduCtrl = TextEditingController(text: dietitian.education ?? '');
+    final certCtrl = TextEditingController(text: dietitian.certificates ?? '');
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _EditDietitianSheet(
+        nameCtrl: nameCtrl,
+        titleCtrl: titleCtrl,
+        clinicCtrl: clinicCtrl,
+        specCtrl: specCtrl,
+        eduCtrl: eduCtrl,
+        certCtrl: certCtrl,
+      ),
+    );
+
+    nameCtrl.dispose();
+    titleCtrl.dispose();
+    clinicCtrl.dispose();
+    specCtrl.dispose();
+    eduCtrl.dispose();
+    certCtrl.dispose();
+
+    if (saved == true) _refresh();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +106,29 @@ class ProfileScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          if (user != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit Profile',
+              onPressed: () {
+                if (user is PatientModel) {
+                  _showEditPatientSheet(user);
+                } else if (user is DietitianModel) {
+                  _showEditDietitianSheet(user);
+                }
+              },
+            ),
+        ],
+      ),
       body: user == null
           ? const Center(child: Text('Not logged in.'))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // ── Avatar & Name ──
                   CircleAvatar(
                     radius: 44,
                     backgroundColor: colorScheme.primaryContainer,
@@ -70,14 +167,12 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // ── Common Info ──
                   _InfoTile(
                     icon: Icons.email_outlined,
                     label: 'Email',
                     value: user.email,
                   ),
 
-                  // ── Dietitian Info ──
                   if (user is DietitianModel) ...[
                     _InfoTile(
                       icon: Icons.badge_outlined,
@@ -94,9 +189,32 @@ class ProfileScreen extends StatelessWidget {
                       label: 'Specialization',
                       value: user.specialization,
                     ),
+                    if (user.education != null &&
+                        user.education!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _SectionCard(
+                        icon: Icons.school_outlined,
+                        label: 'Education',
+                        child: Text(
+                          user.education!,
+                          style: textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                    if (user.certificates != null &&
+                        user.certificates!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _SectionCard(
+                        icon: Icons.workspace_premium_outlined,
+                        label: 'Certificates',
+                        child: Text(
+                          user.certificates!,
+                          style: textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
                   ],
 
-                  // ── Patient Info ──
                   if (user is PatientModel) ...[
                     _InfoTile(
                       icon: Icons.phone_outlined,
@@ -119,7 +237,6 @@ class ProfileScreen extends StatelessWidget {
 
                     const SizedBox(height: 8),
 
-                    // Weight & Height cards
                     Row(
                       children: [
                         Expanded(
@@ -159,7 +276,6 @@ class ProfileScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Goal chip
                     _SectionCard(
                       icon: Icons.flag_outlined,
                       label: 'Main Goal',
@@ -241,6 +357,379 @@ class ProfileScreen extends StatelessWidget {
     return bmi.toStringAsFixed(1);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Edit sheets
+// ---------------------------------------------------------------------------
+
+class _EditPatientSheet extends StatefulWidget {
+  final TextEditingController nameCtrl;
+  final TextEditingController phoneCtrl;
+  final TextEditingController weightCtrl;
+  final TextEditingController heightCtrl;
+  final TextEditingController allergyCtrl;
+  final TextEditingController healthCtrl;
+  final PatientGoal initialGoal;
+  final Map<PatientGoal, String> goalLabels;
+
+  const _EditPatientSheet({
+    required this.nameCtrl,
+    required this.phoneCtrl,
+    required this.weightCtrl,
+    required this.heightCtrl,
+    required this.allergyCtrl,
+    required this.healthCtrl,
+    required this.initialGoal,
+    required this.goalLabels,
+  });
+
+  @override
+  State<_EditPatientSheet> createState() => _EditPatientSheetState();
+}
+
+class _EditPatientSheetState extends State<_EditPatientSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late PatientGoal _selectedGoal;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedGoal = widget.initialGoal;
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+
+    final weight = double.tryParse(widget.weightCtrl.text.trim());
+    final height = double.tryParse(widget.heightCtrl.text.trim());
+
+    final updates = <String, dynamic>{
+      'name': widget.nameCtrl.text.trim(),
+      'phone': widget.phoneCtrl.text.trim(),
+      'goal': _selectedGoal.name,
+      'allergies': widget.allergyCtrl.text.trim(),
+      'healthCondition': widget.healthCtrl.text.trim(),
+    };
+    if (weight != null) updates['weight'] = weight;
+    if (height != null) updates['height'] = height;
+
+    await RepositoryLocator.firebaseAuth.updateUserProfile(updates);
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomInset),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Edit Profile',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _formField(widget.nameCtrl, 'Full Name', Icons.person_outline,
+                  required: true),
+              _formField(widget.phoneCtrl, 'Phone', Icons.phone_outlined,
+                  required: true, keyboard: TextInputType.phone),
+              Row(
+                children: [
+                  Expanded(
+                    child: _formField(
+                      widget.weightCtrl,
+                      'Weight (kg)',
+                      Icons.monitor_weight_outlined,
+                      required: true,
+                      keyboard: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _formField(
+                      widget.heightCtrl,
+                      'Height (cm)',
+                      Icons.height,
+                      required: true,
+                      keyboard: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Main Goal',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: PatientGoal.values.map((goal) {
+                  final isSelected = _selectedGoal == goal;
+                  return ChoiceChip(
+                    label: Text(widget.goalLabels[goal]!),
+                    selected: isSelected,
+                    onSelected: (_) =>
+                        setState(() => _selectedGoal = goal),
+                    selectedColor: colorScheme.primaryContainer,
+                    showCheckmark: false,
+                    avatar: isSelected
+                        ? Icon(Icons.check_circle,
+                            size: 18, color: colorScheme.primary)
+                        : null,
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              _formField(
+                widget.allergyCtrl,
+                'Allergies',
+                Icons.warning_amber_outlined,
+                maxLines: 2,
+              ),
+              _formField(
+                widget.healthCtrl,
+                'Health Conditions',
+                Icons.medical_information_outlined,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 50,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check),
+                  label: const Text('Save Changes'),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _formField(
+    TextEditingController ctrl,
+    String label,
+    IconData icon, {
+    bool required = false,
+    TextInputType keyboard = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: TextFormField(
+        controller: ctrl,
+        keyboardType: keyboard,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          border: const OutlineInputBorder(),
+          alignLabelWithHint: maxLines > 1,
+        ),
+        validator: required
+            ? (v) =>
+                (v == null || v.trim().isEmpty) ? '$label is required' : null
+            : null,
+      ),
+    );
+  }
+}
+
+class _EditDietitianSheet extends StatefulWidget {
+  final TextEditingController nameCtrl;
+  final TextEditingController titleCtrl;
+  final TextEditingController clinicCtrl;
+  final TextEditingController specCtrl;
+  final TextEditingController eduCtrl;
+  final TextEditingController certCtrl;
+
+  const _EditDietitianSheet({
+    required this.nameCtrl,
+    required this.titleCtrl,
+    required this.clinicCtrl,
+    required this.specCtrl,
+    required this.eduCtrl,
+    required this.certCtrl,
+  });
+
+  @override
+  State<_EditDietitianSheet> createState() => _EditDietitianSheetState();
+}
+
+class _EditDietitianSheetState extends State<_EditDietitianSheet> {
+  final _formKey = GlobalKey<FormState>();
+  bool _saving = false;
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+
+    final updates = <String, dynamic>{
+      'name': widget.nameCtrl.text.trim(),
+      'title': widget.titleCtrl.text.trim(),
+      'clinicName': widget.clinicCtrl.text.trim(),
+      'specialization': widget.specCtrl.text.trim(),
+      'education': widget.eduCtrl.text.trim(),
+      'certificates': widget.certCtrl.text.trim(),
+    };
+
+    await RepositoryLocator.firebaseAuth.updateUserProfile(updates);
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomInset),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Edit Profile',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _formField(widget.nameCtrl, 'Full Name', Icons.person_outline,
+                  required: true),
+              _formField(
+                  widget.titleCtrl, 'Title', Icons.badge_outlined,
+                  required: true),
+              _formField(widget.clinicCtrl, 'Clinic Name',
+                  Icons.local_hospital_outlined,
+                  required: true),
+              _formField(widget.specCtrl, 'Specialization',
+                  Icons.science_outlined,
+                  required: true),
+              _formField(
+                widget.eduCtrl,
+                'Education',
+                Icons.school_outlined,
+                maxLines: 3,
+                hint: 'e.g. PhD in Nutrition, BSc in Biochemistry',
+              ),
+              _formField(
+                widget.certCtrl,
+                'Certificates',
+                Icons.workspace_premium_outlined,
+                maxLines: 3,
+                hint: 'e.g. Certified Diabetes Educator, Sports Nutrition',
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 50,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check),
+                  label: const Text('Save Changes'),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _formField(
+    TextEditingController ctrl,
+    String label,
+    IconData icon, {
+    bool required = false,
+    int maxLines = 1,
+    String? hint,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: TextFormField(
+        controller: ctrl,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon),
+          border: const OutlineInputBorder(),
+          alignLabelWithHint: maxLines > 1,
+        ),
+        validator: required
+            ? (v) =>
+                (v == null || v.trim().isEmpty) ? '$label is required' : null
+            : null,
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared display widgets
+// ---------------------------------------------------------------------------
 
 class _InfoTile extends StatelessWidget {
   final IconData icon;

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/enums/enums.dart';
+import '../../../data/models/notification_model.dart';
 import '../../../data/repository_locator.dart';
 import '../../../data/models/appointment_model.dart';
 import '../../../data/models/dietitian_model.dart';
@@ -169,6 +171,18 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     );
 
     await RepositoryLocator.appointment.createAppointment(appointment);
+
+    await RepositoryLocator.notification.createNotification(
+      NotificationModel(
+        id: '',
+        recipientId: widget.dietitianId,
+        type: NotificationType.appointmentRequested,
+        title: 'New Appointment Request',
+        message: '${user.name} requested an appointment on '
+            '${_formatDate(dateTime)} at ${_formatSlotTime(dateTime)}.',
+        createdAt: DateTime.now(),
+      ),
+    );
 
     if (!mounted) return;
 

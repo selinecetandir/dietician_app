@@ -80,7 +80,15 @@ class FirebaseDietitianRepository implements DietitianRepository {
       title: data['title'] as String? ?? '',
       clinicName: data['clinicName'] as String? ?? '',
       specialization: data['specialization'] as String? ?? '',
+      education: _nullIfEmpty(data['education']),
+      certificates: _nullIfEmpty(data['certificates']),
     );
+  }
+
+  String? _nullIfEmpty(dynamic value) {
+    if (value == null) return null;
+    final s = value.toString();
+    return s.isEmpty ? null : s;
   }
 
   Map<String, dynamic> _slotToMap(TimeSlotModel s) {
