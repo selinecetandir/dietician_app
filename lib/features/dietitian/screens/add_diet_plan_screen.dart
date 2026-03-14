@@ -24,6 +24,7 @@ class _AddDietPlanScreenState extends State<AddDietPlanScreen> {
   DateTime? _weekStart;
   DateTime? _weekEnd;
   bool _saving = false;
+  int _currentStep = 0;
 
   bool get _isEditing => widget.existingPlan != null;
 
@@ -172,6 +173,20 @@ class _AddDietPlanScreenState extends State<AddDietPlanScreen> {
         key: _formKey,
         child: Stepper(
           type: StepperType.vertical,
+          currentStep: _currentStep,
+          onStepContinue: () {
+            if (_currentStep < 7) {
+              setState(() => _currentStep++);
+            }
+          },
+          onStepCancel: () {
+            if (_currentStep > 0) {
+              setState(() => _currentStep--);
+            }
+          },
+          onStepTapped: (index) {
+            setState(() => _currentStep = index);
+          },
           controlsBuilder: (context, details) {
             final isLast = details.stepIndex == 7;
             return Padding(
@@ -213,11 +228,13 @@ class _AddDietPlanScreenState extends State<AddDietPlanScreen> {
                 children: [
                   TextFormField(
                     controller: _titleCtrl,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Plan Title',
                       hintText: 'e.g. Weekly Diet Plan - Week 1',
-                      prefixIcon: Icon(Icons.title),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.title),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Title is required';
