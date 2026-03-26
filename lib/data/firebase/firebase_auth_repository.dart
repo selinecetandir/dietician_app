@@ -56,6 +56,11 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _service.auth.sendPasswordResetEmail(email: email.trim());
+  }
+
+  @override
   Future<void> logout() async {
     await _service.auth.signOut();
     _cachedUser = null;
@@ -123,13 +128,19 @@ class FirebaseAuthRepository implements AuthRepository {
         id: uid,
         email: data['email'] as String? ?? '',
         name: data['name'] as String? ?? '',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(data['createdAt'] as int? ?? 0),
+        createdAt: DateTime.fromMillisecondsSinceEpoch(
+          data['createdAt'] as int? ?? 0,
+        ),
         phone: data['phone'] as String? ?? '',
         gender: Gender.values.byName(data['gender'] as String? ?? 'male'),
         weight: (data['weight'] as num?)?.toDouble() ?? 0,
         height: (data['height'] as num?)?.toDouble() ?? 0,
-        goal: PatientGoal.values.byName(data['goal'] as String? ?? 'stayHealthy'),
-        birthDate: DateTime.fromMillisecondsSinceEpoch(data['birthDate'] as int? ?? 0),
+        goal: PatientGoal.values.byName(
+          data['goal'] as String? ?? 'stayHealthy',
+        ),
+        birthDate: DateTime.fromMillisecondsSinceEpoch(
+          data['birthDate'] as int? ?? 0,
+        ),
         allergies: _nullIfEmpty(data['allergies']),
         healthCondition: _nullIfEmpty(data['healthCondition']),
       );
@@ -138,7 +149,9 @@ class FirebaseAuthRepository implements AuthRepository {
         id: uid,
         email: data['email'] as String? ?? '',
         name: data['name'] as String? ?? '',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(data['createdAt'] as int? ?? 0),
+        createdAt: DateTime.fromMillisecondsSinceEpoch(
+          data['createdAt'] as int? ?? 0,
+        ),
         title: data['title'] as String? ?? '',
         clinicName: data['clinicName'] as String? ?? '',
         specialization: data['specialization'] as String? ?? '',

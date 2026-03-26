@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordCtrl = TextEditingController();
   final _authRepo = RepositoryLocator.auth;
   bool _loading = false;
+  bool _resetLoading = false;
   bool _obscurePassword = true;
 
   String get _roleLabel =>
@@ -51,9 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (user.role != widget.role) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('This account is not a $_roleLabel account.'),
-          ),
+          SnackBar(content: Text('This account is not a $_roleLabel account.')),
         );
         setState(() => _loading = false);
         return;
@@ -66,12 +65,40 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter your account email first.')),
+      );
+      return;
+    }
+
+    setState(() => _resetLoading = true);
+    try {
+      await _authRepo.sendPasswordResetEmail(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent. Check your inbox.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not send reset email right now.')),
+      );
+    } finally {
+      if (mounted) setState(() => _resetLoading = false);
     }
   }
 
@@ -107,7 +134,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Email is required';
+                    }
                     if (!v.contains('@')) return 'Enter a valid email';
                     return null;
                   },
@@ -122,9 +151,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
@@ -133,6 +164,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (v == null || v.isEmpty) return 'Password is required';
                     return null;
                   },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _resetLoading ? null : _handleForgotPassword,
+                    child: Text(
+                      _resetLoading ? 'Sending...' : 'Forgot Password?',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
 

@@ -25,6 +25,10 @@
       ".read": true,
       ".write": true
     },
+    "bloodTests": {
+      ".read": true,
+      ".write": true
+    },
     "notifications": {
       ".read": true,
       ".write": true
