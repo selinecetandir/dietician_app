@@ -33,6 +33,11 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
   Future<void> logout() async {
     _db.currentUser = null;
   }

@@ -52,47 +52,51 @@ class _DietitianHomeScreenState extends State<DietitianHomeScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _patients.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.people_outline, size: 64, color: colorScheme.outline),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No patients yet.',
-                        style: textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Patients will appear here once they book\nan appointment with you.',
-                        style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 64,
+                    color: colorScheme.outline,
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _patients.length,
-                    itemBuilder: (ctx, i) {
-                      final patient = _patients[i];
-                      return _PatientCard(
-                        patient: patient,
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PatientDetailScreen(patientId: patient.id),
-                            ),
-                          );
-                          _load();
-                        },
+                  const SizedBox(height: 12),
+                  Text('No patients yet.', style: textTheme.bodyLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Patients will appear here once they book\nan appointment with you.',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: _patients.length,
+                itemBuilder: (ctx, i) {
+                  final patient = _patients[i];
+                  return _PatientCard(
+                    patient: patient,
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              PatientDetailScreen(patientId: patient.id),
+                        ),
                       );
+                      _load();
                     },
-                  ),
-                ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -127,7 +131,9 @@ class _PatientCard extends StatelessWidget {
         ),
         subtitle: Text(
           '${patient.age} years old',
-          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+          style: textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
         ),
         trailing: const Icon(Icons.chevron_right),
       ),

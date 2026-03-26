@@ -6,6 +6,7 @@ import '../../../data/models/diet_plan_model.dart';
 import '../../../data/models/weight_entry_model.dart';
 import '../../../core/enums/enums.dart';
 import '../../../shared/widgets/weight_progress_chart.dart';
+import 'blood_test_results_screen.dart';
 import 'weight_log_screen.dart';
 
 class PatientHomeScreen extends StatefulWidget {
@@ -35,19 +36,26 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
     await Future.delayed(const Duration(milliseconds: 200));
 
-    final dietitianId = await RepositoryLocator.firebaseAppointment.getPatientDietitianId(user.id);
+    final dietitianId = await RepositoryLocator.firebaseAppointment
+        .getPatientDietitianId(user.id);
     DietitianModel? dietitian;
     if (dietitianId != null) {
-      dietitian = await RepositoryLocator.dietitian.getDietitianById(dietitianId);
+      dietitian = await RepositoryLocator.dietitian.getDietitianById(
+        dietitianId,
+      );
     }
 
-    final dietPlan = await RepositoryLocator.dietPlan.getCurrentDietPlanForPatient(user.id);
-    final nextAppointment = await RepositoryLocator.firebaseAppointment.getNextAppointmentForPatient(user.id);
-    final weightEntries = await RepositoryLocator.weight.getWeightEntriesForPatient(user.id);
+    final dietPlan = await RepositoryLocator.dietPlan
+        .getCurrentDietPlanForPatient(user.id);
+    final nextAppointment = await RepositoryLocator.firebaseAppointment
+        .getNextAppointmentForPatient(user.id);
+    final weightEntries = await RepositoryLocator.weight
+        .getWeightEntriesForPatient(user.id);
 
     DietitianModel? nextAppointmentDietitian;
     if (nextAppointment != null) {
-      nextAppointmentDietitian = await RepositoryLocator.dietitian.getDietitianById(nextAppointment.dietitianId);
+      nextAppointmentDietitian = await RepositoryLocator.dietitian
+          .getDietitianById(nextAppointment.dietitianId);
     }
 
     setState(() {
@@ -61,10 +69,28 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   }
 
   String _formatDate(DateTime dt) {
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}, ${days[dt.weekday - 1]}';
   }
@@ -92,9 +118,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-      ),
+      appBar: AppBar(title: const Text('Home')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -103,6 +127,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
                   _buildDietitianPin(colorScheme, textTheme),
+                  const SizedBox(height: 20),
+                  _buildBloodTestsCard(colorScheme, textTheme),
                   const SizedBox(height: 20),
                   _buildDietPlanCard(colorScheme, textTheme),
                   const SizedBox(height: 20),
@@ -193,11 +219,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 ],
               ),
             ),
-            Icon(
-              Icons.push_pin,
-              size: 20,
-              color: colorScheme.primary,
-            ),
+            Icon(Icons.push_pin, size: 20, color: colorScheme.primary),
           ],
         ),
       ),
@@ -252,12 +274,14 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-            ),
+            decoration: BoxDecoration(color: colorScheme.primary),
             child: Row(
               children: [
-                Icon(Icons.restaurant_menu, color: colorScheme.onPrimary, size: 22),
+                Icon(
+                  Icons.restaurant_menu,
+                  color: colorScheme.onPrimary,
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -303,15 +327,18 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                         : null,
                   ),
                   child: Theme(
-                    data: Theme.of(context).copyWith(
-                      dividerColor: Colors.transparent,
-                    ),
+                    data: Theme.of(
+                      context,
+                    ).copyWith(dividerColor: Colors.transparent),
                     child: ExpansionTile(
                       tilePadding: const EdgeInsets.symmetric(horizontal: 14),
                       childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
                       leading: isToday
                           ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: colorScheme.primary,
                                 borderRadius: BorderRadius.circular(6),
@@ -328,24 +355,46 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                       title: Text(
                         day.dayName,
                         style: textTheme.titleSmall?.copyWith(
-                          fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isToday
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           color: isToday ? colorScheme.primary : null,
                         ),
                       ),
                       initiallyExpanded: isToday,
                       children: [
-                        _mealRow(Icons.wb_sunny_outlined, 'Breakfast',
-                            day.breakfast, colorScheme, textTheme),
+                        _mealRow(
+                          Icons.wb_sunny_outlined,
+                          'Breakfast',
+                          day.breakfast,
+                          colorScheme,
+                          textTheme,
+                        ),
                         const SizedBox(height: 8),
-                        _mealRow(Icons.lunch_dining, 'Lunch',
-                            day.lunch, colorScheme, textTheme),
+                        _mealRow(
+                          Icons.lunch_dining,
+                          'Lunch',
+                          day.lunch,
+                          colorScheme,
+                          textTheme,
+                        ),
                         const SizedBox(height: 8),
-                        _mealRow(Icons.dinner_dining, 'Dinner',
-                            day.dinner, colorScheme, textTheme),
+                        _mealRow(
+                          Icons.dinner_dining,
+                          'Dinner',
+                          day.dinner,
+                          colorScheme,
+                          textTheme,
+                        ),
                         if (day.snack != null) ...[
                           const SizedBox(height: 8),
-                          _mealRow(Icons.apple, 'Snack',
-                              day.snack!, colorScheme, textTheme),
+                          _mealRow(
+                            Icons.apple,
+                            'Snack',
+                            day.snack!,
+                            colorScheme,
+                            textTheme,
+                          ),
                         ],
                       ],
                     ),
@@ -355,6 +404,39 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBloodTestsCard(ColorScheme colorScheme, TextTheme textTheme) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: colorScheme.errorContainer.withValues(alpha: 0.5),
+          child: Icon(
+            Icons.bloodtype_outlined,
+            color: colorScheme.onErrorContainer,
+          ),
+        ),
+        title: Text(
+          'Blood Test Results',
+          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          'View your lab results and export to PDF.',
+          style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const BloodTestResultsScreen()),
+          );
+          _load();
+        },
       ),
     );
   }
@@ -402,7 +484,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  Widget _buildWeightProgressCard(ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildWeightProgressCard(
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -427,7 +512,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   onPressed: () async {
                     await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const WeightLogScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const WeightLogScreen(),
+                      ),
                     );
                     _load();
                   },
@@ -480,7 +567,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
     String dietitianName = 'Dietitian';
     if (_nextAppointmentDietitian != null) {
-      dietitianName = '${_nextAppointmentDietitian!.title} ${_nextAppointmentDietitian!.name}';
+      dietitianName =
+          '${_nextAppointmentDietitian!.title} ${_nextAppointmentDietitian!.name}';
     }
 
     return Card(
@@ -493,7 +581,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.access_time_filled, size: 20, color: colorScheme.primary),
+                Icon(
+                  Icons.access_time_filled,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Upcoming Appointment',
@@ -503,7 +595,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -539,8 +634,18 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                       ),
                       Text(
                         [
-                          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+                          'Jan',
+                          'Feb',
+                          'Mar',
+                          'Apr',
+                          'May',
+                          'Jun',
+                          'Jul',
+                          'Aug',
+                          'Sep',
+                          'Oct',
+                          'Nov',
+                          'Dec',
                         ][_nextAppointment!.dateTime.month - 1],
                         style: textTheme.labelMedium?.copyWith(
                           color: colorScheme.primary,
@@ -564,7 +669,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 14, color: colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -580,7 +689,11 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.schedule, size: 14, color: colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.schedule,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             _formatTime(_nextAppointment!.dateTime),
@@ -590,7 +703,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: colorScheme.tertiaryContainer,
                               borderRadius: BorderRadius.circular(4),
