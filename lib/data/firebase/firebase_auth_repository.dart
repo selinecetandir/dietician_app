@@ -26,7 +26,13 @@ class FirebaseAuthRepository implements AuthRepository {
       final snap = await _service.usersRef.child(credential.user!.uid).get();
       if (!snap.exists || snap.value == null) return null;
 
-      _cachedUser = _userFromSnapshot(credential.user!.uid, snap.value!);
+      final user = _userFromSnapshot(credential.user!.uid, snap.value!);
+      if (!user.isActive) {
+        await _service.auth.signOut();
+        _cachedUser = null;
+        return null;
+      }
+      _cachedUser = user;
       return _cachedUser;
     } on FirebaseAuthException {
       return null;
@@ -84,7 +90,13 @@ class FirebaseAuthRepository implements AuthRepository {
     final snap = await _service.usersRef.child(firebaseUser.uid).get();
     if (!snap.exists || snap.value == null) return null;
 
-    _cachedUser = _userFromSnapshot(firebaseUser.uid, snap.value!);
+    final user = _userFromSnapshot(firebaseUser.uid, snap.value!);
+    if (!user.isActive) {
+      await _service.auth.signOut();
+      _cachedUser = null;
+      return null;
+    }
+    _cachedUser = user;
     return _cachedUser;
   }
 
@@ -94,6 +106,7 @@ class FirebaseAuthRepository implements AuthRepository {
       'name': user.name,
       'role': user.role.name,
       'createdAt': user.createdAt.millisecondsSinceEpoch,
+      'isActive': user.isActive,
     };
 
     if (user is PatientModel) {
@@ -105,15 +118,17 @@ class FirebaseAuthRepository implements AuthRepository {
         'goal': user.goal.name,
         'birthDate': user.birthDate.millisecondsSinceEpoch,
         'allergies': user.allergies ?? '',
+        'diet': user.diet ?? '',
         'healthCondition': user.healthCondition ?? '',
+        'bmi': user.bmi,
       });
     } else if (user is DietitianModel) {
       map.addAll({
         'title': user.title,
         'clinicName': user.clinicName,
         'specialization': user.specialization,
-        'education': user.education ?? '',
-        'certificates': user.certificates ?? '',
+        'education': user.education,
+        'certificates': user.certificates,
       });
     }
 
@@ -124,6 +139,8 @@ class FirebaseAuthRepository implements AuthRepository {
     final data = Map<String, dynamic>.from(rawData as Map);
     final role = UserRole.values.byName(data['role'] as String);
 
+    final isActive = data['isActive'] as bool? ?? true;
+
     if (role == UserRole.admin) {
       return AdminModel(
         id: uid,
@@ -132,6 +149,7 @@ class FirebaseAuthRepository implements AuthRepository {
         createdAt: DateTime.fromMillisecondsSinceEpoch(
           data['createdAt'] as int? ?? 0,
         ),
+        isActive: isActive,
       );
     }
 
@@ -154,7 +172,9 @@ class FirebaseAuthRepository implements AuthRepository {
           data['birthDate'] as int? ?? 0,
         ),
         allergies: _nullIfEmpty(data['allergies']),
+        diet: _nullIfEmpty(data['diet']),
         healthCondition: _nullIfEmpty(data['healthCondition']),
+        isActive: isActive,
       );
     } else {
       return DietitianModel(
@@ -167,8 +187,9 @@ class FirebaseAuthRepository implements AuthRepository {
         title: data['title'] as String? ?? '',
         clinicName: data['clinicName'] as String? ?? '',
         specialization: data['specialization'] as String? ?? '',
-        education: _nullIfEmpty(data['education']),
-        certificates: _nullIfEmpty(data['certificates']),
+        education: data['education'] as String? ?? '',
+        certificates: data['certificates'] as String? ?? '',
+        isActive: isActive,
       );
     }
   }
@@ -186,6 +207,7 @@ class FirebaseAuthRepository implements AuthRepository {
         email: user.email,
         name: user.name,
         createdAt: user.createdAt,
+        isActive: user.isActive,
       );
     }
     if (user is PatientModel) {
@@ -201,7 +223,9 @@ class FirebaseAuthRepository implements AuthRepository {
         goal: user.goal,
         birthDate: user.birthDate,
         allergies: user.allergies,
+        diet: user.diet,
         healthCondition: user.healthCondition,
+        isActive: user.isActive,
       );
     } else if (user is DietitianModel) {
       return DietitianModel(
@@ -214,6 +238,7 @@ class FirebaseAuthRepository implements AuthRepository {
         specialization: user.specialization,
         education: user.education,
         certificates: user.certificates,
+        isActive: user.isActive,
       );
     }
     return user;

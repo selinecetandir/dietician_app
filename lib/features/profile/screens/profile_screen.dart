@@ -69,8 +69,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final titleCtrl = TextEditingController(text: dietitian.title);
     final clinicCtrl = TextEditingController(text: dietitian.clinicName);
     final specCtrl = TextEditingController(text: dietitian.specialization);
-    final eduCtrl = TextEditingController(text: dietitian.education ?? '');
-    final certCtrl = TextEditingController(text: dietitian.certificates ?? '');
+    final eduCtrl = TextEditingController(text: dietitian.education);
+    final certCtrl = TextEditingController(text: dietitian.certificates);
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -189,26 +189,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       label: 'Specialization',
                       value: user.specialization,
                     ),
-                    if (user.education != null &&
-                        user.education!.isNotEmpty) ...[
+                    if (user.education.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       _SectionCard(
                         icon: Icons.school_outlined,
                         label: 'Education',
                         child: Text(
-                          user.education!,
+                          user.education,
                           style: textTheme.bodyMedium,
                         ),
                       ),
                     ],
-                    if (user.certificates != null &&
-                        user.certificates!.isNotEmpty) ...[
+                    if (user.certificates.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       _SectionCard(
                         icon: Icons.workspace_premium_outlined,
                         label: 'Certificates',
                         child: Text(
-                          user.certificates!,
+                          user.certificates,
                           style: textTheme.bodyMedium,
                         ),
                       ),

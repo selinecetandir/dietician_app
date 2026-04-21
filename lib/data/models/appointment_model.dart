@@ -7,6 +7,7 @@ class AppointmentModel {
   final DateTime dateTime;
   final AppointmentStatus status;
   final String? notes;
+  final String? slotId;
 
   const AppointmentModel({
     required this.id,
@@ -15,5 +16,6 @@ class AppointmentModel {
     required this.dateTime,
     this.status = AppointmentStatus.pending,
     this.notes,
+    this.slotId,
   });
 }

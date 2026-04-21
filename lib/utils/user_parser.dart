@@ -25,7 +25,9 @@ PatientModel _patientFromMap(String id, Map<String, dynamic> data) {
     goal: PatientGoal.values.byName(data['goal'] as String? ?? 'stayHealthy'),
     birthDate: DateTime.fromMillisecondsSinceEpoch(data['birthDate'] as int? ?? 0),
     allergies: _nullIfEmpty(data['allergies']),
+    diet: _nullIfEmpty(data['diet']),
     healthCondition: _nullIfEmpty(data['healthCondition']),
+    isActive: data['isActive'] as bool? ?? true,
   );
 }
 

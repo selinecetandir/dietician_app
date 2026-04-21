@@ -168,6 +168,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       dietitianId: widget.dietitianId,
       dateTime: dateTime,
       notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
+      slotId: _selectedSlot?.id,
     );
 
     await RepositoryLocator.appointment.createAppointment(appointment);

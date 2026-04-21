@@ -68,6 +68,16 @@ class FirebaseDietitianRepository implements DietitianRepository {
   }
 
   Future<void> deleteSlot(String slotId) async {
+    final snap = await _service.timeSlotsRef.child(slotId).get();
+    if (snap.exists && snap.value != null) {
+      final data = Map<String, dynamic>.from(snap.value as Map);
+      final status = SlotStatus.values.byName(
+        data['status'] as String? ?? 'available',
+      );
+      if (status != SlotStatus.available) {
+        throw StateError('Booked or blocked slots cannot be deleted.');
+      }
+    }
     await _service.timeSlotsRef.child(slotId).remove();
   }
 
@@ -80,15 +90,10 @@ class FirebaseDietitianRepository implements DietitianRepository {
       title: data['title'] as String? ?? '',
       clinicName: data['clinicName'] as String? ?? '',
       specialization: data['specialization'] as String? ?? '',
-      education: _nullIfEmpty(data['education']),
-      certificates: _nullIfEmpty(data['certificates']),
+      education: data['education'] as String? ?? '',
+      certificates: data['certificates'] as String? ?? '',
+      isActive: data['isActive'] as bool? ?? true,
     );
-  }
-
-  String? _nullIfEmpty(dynamic value) {
-    if (value == null) return null;
-    final s = value.toString();
-    return s.isEmpty ? null : s;
   }
 
   Map<String, dynamic> _slotToMap(TimeSlotModel s) {

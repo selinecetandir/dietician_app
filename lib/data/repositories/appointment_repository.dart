@@ -6,4 +6,9 @@ abstract class AppointmentRepository {
   Future<List<AppointmentModel>> getAppointmentsForDietitian(String dietitianId);
   Future<AppointmentModel> createAppointment(AppointmentModel appointment);
   Future<AppointmentModel> updateStatus(String appointmentId, AppointmentStatus status);
+  Future<AppointmentModel> updateStatusAndSlot(
+    String appointmentId,
+    AppointmentStatus status, {
+    required String? slotId,
+  });
 }

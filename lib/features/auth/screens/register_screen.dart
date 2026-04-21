@@ -27,6 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _titleCtrl = TextEditingController();
   final _clinicCtrl = TextEditingController();
   final _specCtrl = TextEditingController();
+  final _educationCtrl = TextEditingController();
+  final _certificatesCtrl = TextEditingController();
 
   // Patient-specific
   final _phoneCtrl = TextEditingController();
@@ -71,6 +73,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _titleCtrl.dispose();
     _clinicCtrl.dispose();
     _specCtrl.dispose();
+    _educationCtrl.dispose();
+    _certificatesCtrl.dispose();
     _phoneCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
@@ -126,6 +130,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           title: _titleCtrl.text.trim(),
           clinicName: _clinicCtrl.text.trim(),
           specialization: _specCtrl.text.trim(),
+          education: _educationCtrl.text.trim(),
+          certificates: _certificatesCtrl.text.trim(),
         );
       } else {
         user = PatientModel(
@@ -283,6 +289,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _specCtrl,
                     label: 'Specialization',
                     icon: Icons.science_outlined,
+                    validator: _required,
+                  ),
+                  _field(
+                    controller: _educationCtrl,
+                    label: 'Education',
+                    icon: Icons.school_outlined,
+                    validator: _required,
+                  ),
+                  _field(
+                    controller: _certificatesCtrl,
+                    label: 'Certificates',
+                    icon: Icons.workspace_premium_outlined,
                     validator: _required,
                   ),
                 ],
