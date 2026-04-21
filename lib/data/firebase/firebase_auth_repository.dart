@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../models/patient_model.dart';
 import '../models/dietitian_model.dart';
+import '../models/admin_model.dart';
 import '../repositories/auth_repository.dart';
 import '../../core/enums/enums.dart';
 import 'firebase_service.dart';
@@ -123,6 +124,17 @@ class FirebaseAuthRepository implements AuthRepository {
     final data = Map<String, dynamic>.from(rawData as Map);
     final role = UserRole.values.byName(data['role'] as String);
 
+    if (role == UserRole.admin) {
+      return AdminModel(
+        id: uid,
+        email: data['email'] as String? ?? '',
+        name: data['name'] as String? ?? '',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(
+          data['createdAt'] as int? ?? 0,
+        ),
+      );
+    }
+
     if (role == UserRole.patient) {
       return PatientModel(
         id: uid,
@@ -168,6 +180,14 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   UserModel _createUserWithId(UserModel user, String uid) {
+    if (user is AdminModel) {
+      return AdminModel(
+        id: uid,
+        email: user.email,
+        name: user.name,
+        createdAt: user.createdAt,
+      );
+    }
     if (user is PatientModel) {
       return PatientModel(
         id: uid,

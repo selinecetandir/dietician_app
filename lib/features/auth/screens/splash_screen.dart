@@ -3,6 +3,7 @@ import '../../../app/router.dart';
 import '../../../core/enums/enums.dart';
 import '../../../data/repository_locator.dart';
 import '../../../data/models/patient_model.dart';
+import '../../../data/models/admin_model.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,9 +27,14 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       if (user != null) {
-        final route = user is PatientModel
-            ? AppRoutes.patientHome
-            : AppRoutes.dietitianHome;
+        final String route;
+        if (user is AdminModel) {
+          route = AppRoutes.adminHome;
+        } else if (user is PatientModel) {
+          route = AppRoutes.patientHome;
+        } else {
+          route = AppRoutes.dietitianHome;
+        }
         Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
         return;
       }
@@ -118,6 +124,18 @@ class _SplashScreenState extends State<SplashScreen> {
                   icon: const Icon(Icons.person_outline),
                   label: const Text('Patient Login'),
                 ),
+              ),
+
+              const SizedBox(height: 24),
+
+              TextButton.icon(
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.login,
+                  arguments: UserRole.admin,
+                ),
+                icon: const Icon(Icons.admin_panel_settings_outlined),
+                label: const Text('Admin Login'),
               ),
 
               const Spacer(),

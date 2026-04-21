@@ -8,6 +8,7 @@ import '../features/patient/screens/dietitian_detail_screen.dart';
 import '../features/patient/screens/book_appointment_screen.dart';
 import '../features/dietitian/screens/dietitian_main_screen.dart';
 import '../features/dietitian/screens/schedule_management_screen.dart';
+import '../features/admin/screens/admin_main_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String bookAppointment = '/patient/book-appointment';
   static const String dietitianHome = '/dietitian';
   static const String scheduleManagement = '/dietitian/schedule';
+  static const String adminHome = '/admin';
 }
 
 Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -51,6 +53,9 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
 
     case AppRoutes.scheduleManagement:
       return _page(const ScheduleManagementScreen());
+
+    case AppRoutes.adminHome:
+      return _page(const AdminMainScreen());
 
     default:
       return _page(const SplashScreen());

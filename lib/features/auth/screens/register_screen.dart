@@ -3,6 +3,8 @@ import '../../../core/enums/enums.dart';
 import '../../../data/repository_locator.dart';
 import '../../../data/models/dietitian_model.dart';
 import '../../../data/models/patient_model.dart';
+import '../../../data/models/admin_model.dart';
+import '../../../data/models/user_model.dart';
 
 class RegisterScreen extends StatefulWidget {
   final UserRole role;
@@ -41,8 +43,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
-  String get _roleLabel =>
-      widget.role == UserRole.dietitian ? 'Dietitian' : 'Patient';
+  String get _roleLabel {
+    switch (widget.role) {
+      case UserRole.dietitian:
+        return 'Dietitian';
+      case UserRole.patient:
+        return 'Patient';
+      case UserRole.admin:
+        return 'Admin';
+    }
+  }
 
   static const _goalLabels = <PatientGoal, String>{
     PatientGoal.loseWeight: 'Lose Weight',
@@ -99,17 +109,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       const id = '';
       final now = DateTime.now();
 
-      final user = widget.role == UserRole.dietitian
-          ? DietitianModel(
-              id: id,
-              email: _emailCtrl.text.trim(),
-              name: _nameCtrl.text.trim(),
-              createdAt: now,
-              title: _titleCtrl.text.trim(),
-              clinicName: _clinicCtrl.text.trim(),
-              specialization: _specCtrl.text.trim(),
-            )
-          : PatientModel(
+      final UserModel user;
+      if (widget.role == UserRole.admin) {
+        user = AdminModel(
+          id: id,
+          email: _emailCtrl.text.trim(),
+          name: _nameCtrl.text.trim(),
+          createdAt: now,
+        );
+      } else if (widget.role == UserRole.dietitian) {
+        user = DietitianModel(
+          id: id,
+          email: _emailCtrl.text.trim(),
+          name: _nameCtrl.text.trim(),
+          createdAt: now,
+          title: _titleCtrl.text.trim(),
+          clinicName: _clinicCtrl.text.trim(),
+          specialization: _specCtrl.text.trim(),
+        );
+      } else {
+        user = PatientModel(
               id: id,
               email: _emailCtrl.text.trim(),
               name: _nameCtrl.text.trim(),
@@ -130,6 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ? null
                   : _healthCtrl.text.trim(),
             );
+      }
 
       await _authRepo.register(user: user, password: _passwordCtrl.text);
       await _authRepo.logout();

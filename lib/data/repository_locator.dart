@@ -5,6 +5,7 @@ import 'firebase/firebase_diet_plan_repository.dart';
 import 'firebase/firebase_weight_repository.dart';
 import 'firebase/firebase_notification_repository.dart';
 import 'firebase/firebase_blood_test_repository.dart';
+import 'firebase/firebase_admin_repository.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/appointment_repository.dart';
 import 'repositories/dietitian_repository.dart';
@@ -25,6 +26,7 @@ class RepositoryLocator {
       FirebaseNotificationRepository();
   static final FirebaseBloodTestRepository bloodTest =
       FirebaseBloodTestRepository();
+  static final FirebaseAdminRepository admin = FirebaseAdminRepository();
 
   // Typed accessors for Firebase-specific methods
   static FirebaseAuthRepository get firebaseAuth =>

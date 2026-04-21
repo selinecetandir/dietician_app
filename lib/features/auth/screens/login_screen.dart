@@ -20,8 +20,27 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _resetLoading = false;
   bool _obscurePassword = true;
 
-  String get _roleLabel =>
-      widget.role == UserRole.dietitian ? 'Dietitian' : 'Patient';
+  String get _roleLabel {
+    switch (widget.role) {
+      case UserRole.dietitian:
+        return 'Dietitian';
+      case UserRole.patient:
+        return 'Patient';
+      case UserRole.admin:
+        return 'Admin';
+    }
+  }
+
+  IconData get _roleIcon {
+    switch (widget.role) {
+      case UserRole.dietitian:
+        return Icons.medical_services_outlined;
+      case UserRole.patient:
+        return Icons.person_outline;
+      case UserRole.admin:
+        return Icons.admin_panel_settings_outlined;
+    }
+  }
 
   @override
   void dispose() {
@@ -58,9 +77,18 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final route = widget.role == UserRole.dietitian
-          ? AppRoutes.dietitianHome
-          : AppRoutes.patientHome;
+      final String route;
+      switch (widget.role) {
+        case UserRole.dietitian:
+          route = AppRoutes.dietitianHome;
+          break;
+        case UserRole.patient:
+          route = AppRoutes.patientHome;
+          break;
+        case UserRole.admin:
+          route = AppRoutes.adminHome;
+          break;
+      }
 
       Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
     } catch (e) {
@@ -117,9 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Icon(
-                  widget.role == UserRole.dietitian
-                      ? Icons.medical_services_outlined
-                      : Icons.person_outline,
+                  _roleIcon,
                   size: 64,
                   color: colorScheme.primary,
                 ),
