@@ -1,4 +1,4 @@
-enum UserRole { patient, dietitian }
+enum UserRole { patient, dietitian, admin }
 
 enum AppointmentStatus { pending, approved, rejected, cancelled }
 
