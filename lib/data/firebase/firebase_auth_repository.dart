@@ -120,7 +120,6 @@ class FirebaseAuthRepository implements AuthRepository {
         'allergies': user.allergies ?? '',
         'diet': user.diet ?? '',
         'healthCondition': user.healthCondition ?? '',
-        'bmi': user.bmi,
       });
     } else if (user is DietitianModel) {
       map.addAll({

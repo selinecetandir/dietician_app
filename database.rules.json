@@ -29,6 +29,10 @@
       ".read": true,
       ".write": true
     },
+    "patientDocuments": {
+      ".read": true,
+      ".write": true
+    },
     "notifications": {
       ".read": true,
       ".write": true

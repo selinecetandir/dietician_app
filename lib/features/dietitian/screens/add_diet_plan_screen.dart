@@ -109,20 +109,24 @@ class _AddDietPlanScreenState extends State<AddDietPlanScreen> {
         breakfast: MealDetail(
           name: d.breakfastNameCtrl.text.trim(),
           description: d.breakfastDescCtrl.text.trim(),
+          mealType: MealCategory.breakfast,
         ),
         lunch: MealDetail(
           name: d.lunchNameCtrl.text.trim(),
           description: d.lunchDescCtrl.text.trim(),
+          mealType: MealCategory.lunch,
         ),
         dinner: MealDetail(
           name: d.dinnerNameCtrl.text.trim(),
           description: d.dinnerDescCtrl.text.trim(),
+          mealType: MealCategory.dinner,
         ),
         snack: d.snackNameCtrl.text.trim().isEmpty
             ? null
             : MealDetail(
                 name: d.snackNameCtrl.text.trim(),
                 description: d.snackDescCtrl.text.trim(),
+                mealType: MealCategory.snack,
               ),
       ));
     }

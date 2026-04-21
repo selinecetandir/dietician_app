@@ -1,10 +1,11 @@
-import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
 import '../../../core/enums/enums.dart';
-import '../../../data/models/blood_test_model.dart';
+import '../../../data/models/patient_document_model.dart';
 import '../../../data/models/diet_plan_model.dart';
 import '../../../data/models/patient_model.dart';
 import '../../../data/models/weight_entry_model.dart';
@@ -26,8 +27,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   PatientModel? _patient;
   List<DietPlanModel> _dietPlans = [];
   List<WeightEntryModel> _weightEntries = [];
-  List<BloodTestModel> _bloodTests = [];
-  bool _exportingBloodTests = false;
+  List<PatientDocument> _patientDocuments = [];
+  bool _exportingDocuments = false;
   bool _loading = true;
 
   static const _goalLabels = <PatientGoal, String>{
@@ -53,18 +54,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       plans.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       final weightEntries = await RepositoryLocator.weight
           .getWeightEntriesForPatient(widget.patientId);
-      List<BloodTestModel> bloodTests = [];
+      List<PatientDocument> documents = [];
       try {
-        final loaded = await RepositoryLocator.bloodTest
-            .getBloodTestsForPatient(widget.patientId);
-        bloodTests = loaded;
+        final loaded = await RepositoryLocator.patientDocument
+            .getDocumentsForPatient(widget.patientId);
+        documents = loaded;
       } catch (_) {}
       if (!mounted) return;
       setState(() {
         _patient = patient;
         _dietPlans = plans;
         _weightEntries = weightEntries;
-        _bloodTests = bloodTests;
+        _patientDocuments = documents;
         _loading = false;
       });
     } catch (e) {
@@ -76,30 +77,38 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     }
   }
 
-  String _calcBmi(double weight, double heightCm) {
-    if (heightCm <= 0) return '-';
-    final heightM = heightCm / 100;
-    final bmi = weight / (heightM * heightM);
-    return bmi.toStringAsFixed(1);
-  }
-
   String _formatDate(DateTime dt) {
     return '${dt.day.toString().padLeft(2, '0')}/'
         '${dt.month.toString().padLeft(2, '0')}/'
         '${dt.year}';
   }
 
-  Future<void> _exportUploadedPdf(BloodTestModel report) async {
-    setState(() => _exportingBloodTests = true);
+  Future<void> _exportUploadedPdf(PatientDocument doc) async {
+    setState(() => _exportingDocuments = true);
     try {
-      final bytes = base64Decode(report.pdfBase64);
-      await Printing.sharePdf(bytes: bytes, filename: report.fileName);
+      final bytes = doc.decodePdfBytesFromDataUrl();
+      if (bytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'This document URL cannot be exported from the app.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      await Printing.sharePdf(
+        bytes: Uint8List.fromList(bytes),
+        filename: doc.displayFileName,
+      );
     } finally {
-      if (mounted) setState(() => _exportingBloodTests = false);
+      if (mounted) setState(() => _exportingDocuments = false);
     }
   }
 
-  Future<void> _showAddBloodTestSheet() async {
+  Future<void> _showAddPatientDocumentSheet() async {
     final noteCtrl = TextEditingController();
 
     final saved = await showModalBottomSheet<bool>(
@@ -117,12 +126,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Upload Blood Test PDF',
+                'Upload patient document (PDF)',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Text(
-                'Upload a PDF report from clinic or external lab.',
+                'Creates a record with document type, date, and file link.',
                 style: TextStyle(color: Theme.of(ctx).colorScheme.outline),
               ),
               const SizedBox(height: 12),
@@ -146,8 +155,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                   final file = picked?.files.single;
                   final bytes = file?.bytes;
                   if (file == null || bytes == null) return;
-                  await RepositoryLocator.bloodTest.addBloodTest(
+                  await RepositoryLocator.patientDocument.addDocument(
                     patientId: widget.patientId,
+                    documentType: PatientDocument.typeBloodTestPdf,
                     fileName: file.name,
                     pdfBytes: bytes,
                     note: noteCtrl.text,
@@ -170,7 +180,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Blood test PDF uploaded.')),
+          const SnackBar(content: Text('Document uploaded.')),
         );
       }
     }
@@ -287,7 +297,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                       const SizedBox(width: 8),
                       _MetricChip(
                         label: 'BMI',
-                        value: _calcBmi(_patient!.weight, _patient!.height),
+                        value: _patient!.height <= 0
+                            ? '-'
+                            : _patient!.bmi.toStringAsFixed(1),
                         color: colorScheme.secondary,
                         bgColor: colorScheme.secondaryContainer.withValues(
                           alpha: 0.4,
@@ -367,32 +379,32 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // ── Blood Tests ──
+                  // ── Patient documents ──
                   Row(
                     children: [
                       Icon(
-                        Icons.bloodtype_outlined,
+                        Icons.description_outlined,
                         size: 22,
                         color: colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Blood Tests',
+                          'Patient documents',
                           style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       FilledButton.tonalIcon(
-                        onPressed: _showAddBloodTestSheet,
+                        onPressed: _showAddPatientDocumentSheet,
                         icon: const Icon(Icons.upload_file_outlined, size: 18),
                         label: const Text('Upload PDF'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (_bloodTests.isEmpty)
+                  if (_patientDocuments.isEmpty)
                     Card(
                       elevation: 0,
                       color: colorScheme.surfaceContainerLow,
@@ -400,7 +412,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         padding: const EdgeInsets.all(20),
                         child: Center(
                           child: Text(
-                            'No blood test results available yet.',
+                            'No documents on file yet.',
                             style: textTheme.bodyMedium?.copyWith(
                               color: colorScheme.outline,
                             ),
@@ -410,12 +422,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                       ),
                     )
                   else
-                    ..._bloodTests.map(
-                      (test) => _BloodTestCard(
-                        test: test,
+                    ..._patientDocuments.map(
+                      (doc) => _PatientDocumentCard(
+                        document: doc,
                         formatDate: _formatDate,
-                        busy: _exportingBloodTests,
-                        onExport: () => _exportUploadedPdf(test),
+                        busy: _exportingDocuments,
+                        onExport: () => _exportUploadedPdf(doc),
                       ),
                     ),
                   const SizedBox(height: 24),
@@ -530,18 +542,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   }
 }
 
-class _BloodTestCard extends StatelessWidget {
-  final BloodTestModel test;
+class _PatientDocumentCard extends StatelessWidget {
+  final PatientDocument document;
   final String Function(DateTime) formatDate;
   final bool busy;
   final VoidCallback onExport;
 
-  const _BloodTestCard({
-    required this.test,
+  const _PatientDocumentCard({
+    required this.document,
     required this.formatDate,
     required this.busy,
     required this.onExport,
   });
+
+  String _typeLabel(String type) {
+    switch (type) {
+      case PatientDocument.typeBloodTestPdf:
+        return 'Blood test (PDF)';
+      default:
+        return type;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -558,29 +579,40 @@ class _BloodTestCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    test.fileName,
+                    document.displayFileName,
                     style: textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 Text(
-                  formatDate(test.uploadedAt),
+                  formatDate(document.createdAt),
                   style: textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Uploaded by: ${test.uploadedByRole}',
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+              _typeLabel(document.documentType),
+              style: textTheme.labelMedium?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            if (test.note != null) ...[
+            if (document.uploadedByRole != null &&
+                document.uploadedByRole!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Uploaded by: ${document.uploadedByRole}',
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+              ),
+            ],
+            if (document.note != null && document.note!.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
-                test.note!,
+                document.note!,
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
