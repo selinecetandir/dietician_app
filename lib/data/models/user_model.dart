@@ -1,6 +1,6 @@
 import '../../core/enums/enums.dart';
 
-class UserModel {
+abstract class UserModel {
   final String id;
   final String email;
   final String name;

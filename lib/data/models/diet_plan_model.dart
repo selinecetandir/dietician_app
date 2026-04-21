@@ -1,8 +1,15 @@
+import '../../core/enums/enums.dart';
+
 class MealDetail {
   final String name;
   final String description;
+  final MealCategory mealType;
 
-  const MealDetail({required this.name, required this.description});
+  const MealDetail({
+    required this.name,
+    required this.description,
+    required this.mealType,
+  });
 }
 
 class DailyMealPlan {

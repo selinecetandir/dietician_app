@@ -1,20 +1,21 @@
-import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
-import '../../../data/models/blood_test_model.dart';
+import '../../../data/models/patient_document_model.dart';
 import '../../../data/repository_locator.dart';
 
-class BloodTestResultsScreen extends StatefulWidget {
-  const BloodTestResultsScreen({super.key});
+class PatientDocumentsScreen extends StatefulWidget {
+  const PatientDocumentsScreen({super.key});
 
   @override
-  State<BloodTestResultsScreen> createState() => _BloodTestResultsScreenState();
+  State<PatientDocumentsScreen> createState() => _PatientDocumentsScreenState();
 }
 
-class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
-  List<BloodTestModel> _bloodTests = [];
+class _PatientDocumentsScreenState extends State<PatientDocumentsScreen> {
+  List<PatientDocument> _documents = [];
   bool _loading = true;
   bool _busy = false;
 
@@ -28,12 +29,12 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
     final user = RepositoryLocator.auth.currentUser;
     if (user == null) return;
 
-    final tests = await RepositoryLocator.bloodTest.getBloodTestsForPatient(
+    final docs = await RepositoryLocator.patientDocument.getDocumentsForPatient(
       user.id,
     );
     if (!mounted) return;
     setState(() {
-      _bloodTests = tests;
+      _documents = docs;
       _loading = false;
     });
   }
@@ -42,6 +43,15 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
     return '${dt.day.toString().padLeft(2, '0')}/'
         '${dt.month.toString().padLeft(2, '0')}/'
         '${dt.year}';
+  }
+
+  String _typeLabel(String type) {
+    switch (type) {
+      case PatientDocument.typeBloodTestPdf:
+        return 'Blood test (PDF)';
+      default:
+        return type;
+    }
   }
 
   Future<void> _uploadPdfReport() async {
@@ -63,12 +73,12 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Upload Blood Test PDF',
+                'Upload document (PDF)',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               Text(
-                'Select a PDF report from clinic or external lab.',
+                'Select a PDF (e.g. lab results). Stored with type, date, and URL.',
                 style: TextStyle(color: cs.outline),
               ),
               const SizedBox(height: 12),
@@ -95,8 +105,9 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
                     final file = picked?.files.single;
                     final bytes = file?.bytes;
                     if (file == null || bytes == null) return;
-                    await RepositoryLocator.bloodTest.addBloodTest(
+                    await RepositoryLocator.patientDocument.addDocument(
                       patientId: user.id,
+                      documentType: PatientDocument.typeBloodTestPdf,
                       fileName: file.name,
                       pdfBytes: bytes,
                       note: noteCtrl.text,
@@ -126,17 +137,32 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Blood test PDF uploaded.')),
+          const SnackBar(content: Text('Document uploaded.')),
         );
       }
     }
   }
 
-  Future<void> _exportUploadedPdf(BloodTestModel report) async {
+  Future<void> _exportPdf(PatientDocument doc) async {
     setState(() => _busy = true);
     try {
-      final bytes = base64Decode(report.pdfBase64);
-      await Printing.sharePdf(bytes: bytes, filename: report.fileName);
+      final bytes = doc.decodePdfBytesFromDataUrl();
+      if (bytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'This document URL cannot be exported from the app (only inline PDF data URLs are supported).',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      await Printing.sharePdf(
+        bytes: Uint8List.fromList(bytes),
+        filename: doc.displayFileName,
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -149,7 +175,7 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Blood Test Results'),
+        title: const Text('My documents'),
         actions: [
           IconButton(
             onPressed: _busy ? null : _uploadPdfReport,
@@ -160,10 +186,10 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _bloodTests.isEmpty
+          : _documents.isEmpty
           ? Center(
               child: Text(
-                'No blood test results yet.',
+                'No documents yet.',
                 style: tt.bodyLarge?.copyWith(color: cs.outline),
               ),
             )
@@ -171,9 +197,9 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
               onRefresh: _load,
               child: ListView.builder(
                 padding: const EdgeInsets.all(12),
-                itemCount: _bloodTests.length,
+                itemCount: _documents.length,
                 itemBuilder: (context, i) {
-                  final test = _bloodTests[i];
+                  final doc = _documents[i];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 10),
                     child: Padding(
@@ -185,30 +211,42 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  test.fileName,
+                                  doc.displayFileName,
                                   style: tt.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                               Text(
-                                _formatDate(test.uploadedAt),
+                                _formatDate(doc.createdAt),
                                 style: tt.bodySmall?.copyWith(
                                   color: cs.onSurfaceVariant,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
-                            'Uploaded by: ${test.uploadedByRole}',
-                            style: tt.bodySmall?.copyWith(color: cs.outline),
+                            _typeLabel(doc.documentType),
+                            style: tt.labelMedium?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          if (test.note != null && test.note!.isNotEmpty)
+                          if (doc.uploadedByRole != null &&
+                              doc.uploadedByRole!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
-                                test.note!,
+                                'Uploaded by: ${doc.uploadedByRole}',
+                                style: tt.bodySmall?.copyWith(color: cs.outline),
+                              ),
+                            ),
+                          if (doc.note != null && doc.note!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                doc.note!,
                                 style: tt.bodySmall?.copyWith(
                                   color: cs.onSurfaceVariant,
                                 ),
@@ -220,7 +258,7 @@ class _BloodTestResultsScreenState extends State<BloodTestResultsScreen> {
                             child: FilledButton.tonalIcon(
                               onPressed: _busy
                                   ? null
-                                  : () => _exportUploadedPdf(test),
+                                  : () => _exportPdf(doc),
                               icon: const Icon(
                                 Icons.picture_as_pdf_outlined,
                                 size: 18,

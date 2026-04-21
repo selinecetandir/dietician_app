@@ -6,7 +6,7 @@ import '../../../data/models/diet_plan_model.dart';
 import '../../../data/models/weight_entry_model.dart';
 import '../../../core/enums/enums.dart';
 import '../../../shared/widgets/weight_progress_chart.dart';
-import 'blood_test_results_screen.dart';
+import 'patient_documents_screen.dart';
 import 'weight_log_screen.dart';
 
 class PatientHomeScreen extends StatefulWidget {
@@ -128,7 +128,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 children: [
                   _buildDietitianPin(colorScheme, textTheme),
                   const SizedBox(height: 20),
-                  _buildBloodTestsCard(colorScheme, textTheme),
+                  _buildPatientDocumentsCard(colorScheme, textTheme),
                   const SizedBox(height: 20),
                   _buildDietPlanCard(colorScheme, textTheme),
                   const SizedBox(height: 20),
@@ -408,32 +408,35 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  Widget _buildBloodTestsCard(ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildPatientDocumentsCard(
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: colorScheme.errorContainer.withValues(alpha: 0.5),
+          backgroundColor: colorScheme.primaryContainer.withValues(alpha: 0.6),
           child: Icon(
-            Icons.bloodtype_outlined,
-            color: colorScheme.onErrorContainer,
+            Icons.description_outlined,
+            color: colorScheme.onPrimaryContainer,
           ),
         ),
         title: Text(
-          'Blood Test Results',
+          'Patient documents',
           style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          'View your lab results and export to PDF.',
+          'Lab reports and other PDFs linked to your profile.',
           style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () async {
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const BloodTestResultsScreen()),
+            MaterialPageRoute(builder: (_) => const PatientDocumentsScreen()),
           );
           _load();
         },

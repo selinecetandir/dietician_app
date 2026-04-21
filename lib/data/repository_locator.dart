@@ -4,7 +4,7 @@ import 'firebase/firebase_dietitian_repository.dart';
 import 'firebase/firebase_diet_plan_repository.dart';
 import 'firebase/firebase_weight_repository.dart';
 import 'firebase/firebase_notification_repository.dart';
-import 'firebase/firebase_blood_test_repository.dart';
+import 'firebase/firebase_patient_document_repository.dart';
 import 'firebase/firebase_admin_repository.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/appointment_repository.dart';
@@ -24,8 +24,8 @@ class RepositoryLocator {
   static final FirebaseWeightRepository weight = FirebaseWeightRepository();
   static final FirebaseNotificationRepository notification =
       FirebaseNotificationRepository();
-  static final FirebaseBloodTestRepository bloodTest =
-      FirebaseBloodTestRepository();
+  static final FirebasePatientDocumentRepository patientDocument =
+      FirebasePatientDocumentRepository();
   static final FirebaseAdminRepository admin = FirebaseAdminRepository();
 
   // Typed accessors for Firebase-specific methods

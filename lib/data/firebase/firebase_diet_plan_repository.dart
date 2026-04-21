@@ -1,3 +1,4 @@
+import '../../core/enums/enums.dart';
 import '../models/diet_plan_model.dart';
 import 'firebase_service.dart';
 
@@ -57,11 +58,27 @@ class FirebaseDietPlanRepository {
       'createdAt': p.createdAt.millisecondsSinceEpoch,
       'dailyPlans': p.dailyPlans.map((d) => {
         'dayName': d.dayName,
-        'breakfast': {'name': d.breakfast.name, 'description': d.breakfast.description},
-        'lunch': {'name': d.lunch.name, 'description': d.lunch.description},
-        'dinner': {'name': d.dinner.name, 'description': d.dinner.description},
+        'breakfast': {
+          'name': d.breakfast.name,
+          'description': d.breakfast.description,
+          'mealType': d.breakfast.mealType.name,
+        },
+        'lunch': {
+          'name': d.lunch.name,
+          'description': d.lunch.description,
+          'mealType': d.lunch.mealType.name,
+        },
+        'dinner': {
+          'name': d.dinner.name,
+          'description': d.dinner.description,
+          'mealType': d.dinner.mealType.name,
+        },
         'snack': d.snack != null
-            ? {'name': d.snack!.name, 'description': d.snack!.description}
+            ? {
+                'name': d.snack!.name,
+                'description': d.snack!.description,
+                'mealType': d.snack!.mealType.name,
+              }
             : null,
       }).toList(),
     };
@@ -94,20 +111,30 @@ class FirebaseDietPlanRepository {
         final d = Map<String, dynamic>.from(raw as Map);
         return DailyMealPlan(
           dayName: d['dayName'] as String,
-          breakfast: _mealFromMap(d['breakfast']),
-          lunch: _mealFromMap(d['lunch']),
-          dinner: _mealFromMap(d['dinner']),
-          snack: d['snack'] != null ? _mealFromMap(d['snack']) : null,
+          breakfast: _mealFromMap(d['breakfast'], MealCategory.breakfast),
+          lunch: _mealFromMap(d['lunch'], MealCategory.lunch),
+          dinner: _mealFromMap(d['dinner'], MealCategory.dinner),
+          snack: d['snack'] != null
+              ? _mealFromMap(d['snack'], MealCategory.snack)
+              : null,
         );
       }).toList(),
     );
   }
 
-  MealDetail _mealFromMap(dynamic raw) {
+  MealDetail _mealFromMap(dynamic raw, MealCategory fallback) {
     final m = Map<String, dynamic>.from(raw as Map);
+    MealCategory mealType = fallback;
+    final typeStr = m['mealType'] as String?;
+    if (typeStr != null) {
+      try {
+        mealType = MealCategory.values.byName(typeStr);
+      } catch (_) {}
+    }
     return MealDetail(
       name: m['name'] as String? ?? '',
       description: m['description'] as String? ?? '',
+      mealType: mealType,
     );
   }
 }
