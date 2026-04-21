@@ -24,6 +24,7 @@ class PatientModel extends UserModel {
     required this.birthDate,
     this.allergies,
     this.healthCondition,
+    super.isActive,
   }) : super(role: UserRole.patient);
 
   int get age {
@@ -34,5 +35,11 @@ class PatientModel extends UserModel {
       a--;
     }
     return a;
+  }
+
+  double get bmi {
+    if (height <= 0) return 0;
+    final h = height / 100.0;
+    return weight / (h * h);
   }
 }

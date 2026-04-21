@@ -49,6 +49,26 @@ class FirebaseAdminRepository {
     await _service.usersRef.child(userId).remove();
   }
 
+  Future<void> updateUserRole(String userId, UserRole newRole) async {
+    await _service.usersRef.child(userId).update({'role': newRole.name});
+  }
+
+  Future<void> updateUserBasics(
+    String userId, {
+    String? name,
+    String? email,
+  }) async {
+    final updates = <String, Object?>{};
+    if (name != null) updates['name'] = name;
+    if (email != null) updates['email'] = email;
+    if (updates.isEmpty) return;
+    await _service.usersRef.child(userId).update(updates);
+  }
+
+  Future<void> setUserActive(String userId, bool active) async {
+    await _service.usersRef.child(userId).update({'isActive': active});
+  }
+
   Future<List<AppointmentModel>> getAllAppointments() async {
     final snap = await _service.appointmentsRef.get();
     if (!snap.exists || snap.value == null) return [];
@@ -107,6 +127,7 @@ class FirebaseAdminRepository {
     final createdAt = DateTime.fromMillisecondsSinceEpoch(
       data['createdAt'] as int? ?? 0,
     );
+    final isActive = data['isActive'] as bool? ?? true;
 
     switch (role) {
       case UserRole.admin:
@@ -115,6 +136,7 @@ class FirebaseAdminRepository {
           email: data['email'] as String? ?? '',
           name: data['name'] as String? ?? '',
           createdAt: createdAt,
+          isActive: isActive,
         );
       case UserRole.dietitian:
         return DietitianModel(
@@ -125,8 +147,9 @@ class FirebaseAdminRepository {
           title: data['title'] as String? ?? '',
           clinicName: data['clinicName'] as String? ?? '',
           specialization: data['specialization'] as String? ?? '',
-          education: _nullIfEmpty(data['education']),
-          certificates: _nullIfEmpty(data['certificates']),
+          education: data['education'] as String? ?? '',
+          certificates: data['certificates'] as String? ?? '',
+          isActive: isActive,
         );
       case UserRole.patient:
         return PatientModel(
@@ -145,6 +168,7 @@ class FirebaseAdminRepository {
           allergies: _nullIfEmpty(data['allergies']),
           diet: _nullIfEmpty(data['diet']),
           healthCondition: _nullIfEmpty(data['healthCondition']),
+          isActive: isActive,
         );
     }
   }
@@ -159,6 +183,7 @@ class FirebaseAdminRepository {
       ),
       status: _parseStatus(data['status']),
       notes: _nullIfEmpty(data['notes']),
+      slotId: _nullIfEmpty(data['slotId']),
     );
   }
 

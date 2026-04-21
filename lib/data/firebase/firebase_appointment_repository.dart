@@ -18,6 +18,7 @@ class FirebaseAppointmentRepository implements AppointmentRepository {
       dateTime: appointment.dateTime,
       status: appointment.status,
       notes: appointment.notes,
+      slotId: appointment.slotId,
     );
   }
 
@@ -44,6 +45,41 @@ class FirebaseAppointmentRepository implements AppointmentRepository {
     await _service.appointmentsRef
         .child(appointmentId)
         .update({'status': status.name});
+
+    final snap = await _service.appointmentsRef.child(appointmentId).get();
+    return _fromEntry(appointmentId, snap.value!);
+  }
+
+  @override
+  Future<AppointmentModel> updateStatusAndSlot(
+    String appointmentId,
+    AppointmentStatus status, {
+    required String? slotId,
+  }) async {
+    await _service.appointmentsRef
+        .child(appointmentId)
+        .update({'status': status.name});
+
+    if (slotId != null && slotId.isNotEmpty) {
+      SlotStatus? newSlotStatus;
+      switch (status) {
+        case AppointmentStatus.approved:
+          newSlotStatus = SlotStatus.booked;
+          break;
+        case AppointmentStatus.rejected:
+        case AppointmentStatus.cancelled:
+          newSlotStatus = SlotStatus.available;
+          break;
+        case AppointmentStatus.pending:
+          newSlotStatus = null;
+          break;
+      }
+      if (newSlotStatus != null) {
+        await _service.timeSlotsRef
+            .child(slotId)
+            .update({'status': newSlotStatus.name});
+      }
+    }
 
     final snap = await _service.appointmentsRef.child(appointmentId).get();
     return _fromEntry(appointmentId, snap.value!);
@@ -98,6 +134,7 @@ class FirebaseAppointmentRepository implements AppointmentRepository {
       'dateTime': a.dateTime.millisecondsSinceEpoch,
       'status': a.status.name,
       'notes': a.notes ?? '',
+      'slotId': a.slotId ?? '',
     };
   }
 
@@ -110,6 +147,7 @@ class FirebaseAppointmentRepository implements AppointmentRepository {
       dateTime: DateTime.fromMillisecondsSinceEpoch(data['dateTime'] as int),
       status: AppointmentStatus.values.byName(data['status'] as String),
       notes: _nullIfEmpty(data['notes']),
+      slotId: _nullIfEmpty(data['slotId']),
     );
   }
 

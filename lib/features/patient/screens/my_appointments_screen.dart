@@ -109,9 +109,10 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
       ),
     );
     if (confirmed == true) {
-      await RepositoryLocator.appointment.updateStatus(
+      await RepositoryLocator.appointment.updateStatusAndSlot(
         appointment.id,
         AppointmentStatus.cancelled,
+        slotId: appointment.slotId,
       );
       await _load();
       if (mounted) {

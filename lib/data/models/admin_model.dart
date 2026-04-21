@@ -7,5 +7,6 @@ class AdminModel extends UserModel {
     required super.email,
     required super.name,
     required super.createdAt,
+    super.isActive,
   }) : super(role: UserRole.admin);
 }

@@ -37,4 +37,13 @@ class MockAppointmentRepository implements AppointmentRepository {
     }
     return updated;
   }
+
+  @override
+  Future<AppointmentModel> updateStatusAndSlot(
+    String appointmentId,
+    AppointmentStatus status, {
+    required String? slotId,
+  }) async {
+    return updateStatus(appointmentId, status);
+  }
 }

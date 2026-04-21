@@ -59,8 +59,14 @@ class _AppointmentRequestsScreenState
   }
 
   Future<void> _updateStatus(
-      String id, AppointmentStatus status, String patientId) async {
-    await RepositoryLocator.appointment.updateStatus(id, status);
+      AppointmentModel appointment, AppointmentStatus status) async {
+    final id = appointment.id;
+    final patientId = appointment.patientId;
+    await RepositoryLocator.appointment.updateStatusAndSlot(
+      id,
+      status,
+      slotId: appointment.slotId,
+    );
 
     final user = RepositoryLocator.auth.currentUser;
     final isApproved = status == AppointmentStatus.approved;
@@ -219,7 +225,7 @@ class _AppointmentRequestsScreenState
                                   children: [
                                     OutlinedButton.icon(
                                       onPressed: () => _updateStatus(
-                                          a.id, AppointmentStatus.rejected, a.patientId),
+                                          a, AppointmentStatus.rejected),
                                       icon: const Icon(Icons.close, size: 18),
                                       label: const Text('Reject'),
                                       style: OutlinedButton.styleFrom(
@@ -229,7 +235,7 @@ class _AppointmentRequestsScreenState
                                     const SizedBox(width: 8),
                                     FilledButton.icon(
                                       onPressed: () => _updateStatus(
-                                          a.id, AppointmentStatus.approved, a.patientId),
+                                          a, AppointmentStatus.approved),
                                       icon: const Icon(Icons.check, size: 18),
                                       label: const Text('Approve'),
                                     ),

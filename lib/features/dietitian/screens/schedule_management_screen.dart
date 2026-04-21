@@ -110,7 +110,16 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
   }
 
   Future<void> _deleteSlot(TimeSlotModel slot) async {
-    await RepositoryLocator.firebaseDietitian.deleteSlot(slot.id);
+    try {
+      await RepositoryLocator.firebaseDietitian.deleteSlot(slot.id);
+    } on StateError catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+      return;
+    }
     _load();
   }
 
@@ -248,9 +257,19 @@ class _ScheduleManagementScreenState extends State<ScheduleManagementScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   IconButton(
-                                    onPressed: () => _confirmDeleteSlot(slot),
-                                    icon: Icon(Icons.close, size: 18, color: colorScheme.error),
-                                    tooltip: 'Remove slot',
+                                    onPressed: slot.status == SlotStatus.available
+                                        ? () => _confirmDeleteSlot(slot)
+                                        : null,
+                                    icon: Icon(
+                                      Icons.close,
+                                      size: 18,
+                                      color: slot.status == SlotStatus.available
+                                          ? colorScheme.error
+                                          : colorScheme.outline,
+                                    ),
+                                    tooltip: slot.status == SlotStatus.available
+                                        ? 'Remove slot'
+                                        : 'Booked slots cannot be deleted',
                                   ),
                                 ],
                               ),

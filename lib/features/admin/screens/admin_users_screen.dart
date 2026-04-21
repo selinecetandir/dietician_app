@@ -65,9 +65,13 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     return list.toList();
   }
 
+  bool _isSelf(UserModel user) {
+    final me = RepositoryLocator.auth.currentUser;
+    return me != null && me.id == user.id;
+  }
+
   Future<void> _confirmDelete(UserModel user) async {
-    final currentAdmin = RepositoryLocator.auth.currentUser;
-    if (currentAdmin != null && currentAdmin.id == user.id) {
+    if (_isSelf(user)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('You cannot delete your own admin account here.'),
@@ -115,6 +119,217 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Delete failed: $e')),
       );
+    }
+  }
+
+  Future<void> _openEdit(UserModel user) async {
+    final nameCtrl = TextEditingController(text: user.name);
+    final emailCtrl = TextEditingController(text: user.email);
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 24,
+            right: 24,
+            top: 24,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setSheetState) => Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Edit User',
+                    style: Theme.of(ctx).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Name is required'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: emailCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Email is required';
+                      }
+                      if (!v.contains('@')) return 'Enter a valid email';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton.icon(
+                      onPressed: saving
+                          ? null
+                          : () async {
+                              if (!formKey.currentState!.validate()) return;
+                              setSheetState(() => saving = true);
+                              try {
+                                await _repo.updateUserBasics(
+                                  user.id,
+                                  name: nameCtrl.text.trim(),
+                                  email: emailCtrl.text.trim(),
+                                );
+                                if (ctx.mounted) Navigator.pop(ctx);
+                              } finally {
+                                if (ctx.mounted) {
+                                  setSheetState(() => saving = false);
+                                }
+                              }
+                            },
+                      icon: saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.save),
+                      label: Text(saving ? 'Saving...' : 'Save'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (mounted) await _load();
+  }
+
+  Future<void> _openChangeRole(UserModel user) async {
+    UserRole selected = user.role;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) => AlertDialog(
+          title: const Text('Change role'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Role-specific fields will be preserved but may need to be '
+                'completed by the user on next login.',
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<UserRole>(
+                initialValue: selected,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'New role',
+                ),
+                items: UserRole.values
+                    .map(
+                      (r) => DropdownMenuItem(
+                        value: r,
+                        child: Text(_roleLabel(r)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setStateDialog(() => selected = v);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Change'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || selected == user.role) return;
+
+    try {
+      await _repo.updateUserRole(user.id, selected);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${user.name} is now a ${_roleLabel(selected)}.'),
+        ),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Role update failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _toggleActive(UserModel user) async {
+    if (_isSelf(user) && user.isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You cannot deactivate your own account.'),
+        ),
+      );
+      return;
+    }
+
+    final target = !user.isActive;
+    try {
+      await _repo.setUserActive(user.id, target);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${user.name} is now ${target ? 'active' : 'inactive'}.',
+          ),
+        ),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Update failed: $e')),
+      );
+    }
+  }
+
+  static String _roleLabel(UserRole r) {
+    switch (r) {
+      case UserRole.patient:
+        return 'Patient';
+      case UserRole.dietitian:
+        return 'Dietitian';
+      case UserRole.admin:
+        return 'Admin';
     }
   }
 
@@ -201,10 +416,17 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                               itemCount: _filtered.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 8),
-                              itemBuilder: (ctx, i) =>
-                                  _UserTile(user: _filtered[i], onDelete: () {
-                                _confirmDelete(_filtered[i]);
-                              }),
+                              itemBuilder: (ctx, i) {
+                                final u = _filtered[i];
+                                return _UserTile(
+                                  user: u,
+                                  isSelf: _isSelf(u),
+                                  onEdit: () => _openEdit(u),
+                                  onChangeRole: () => _openChangeRole(u),
+                                  onToggleActive: () => _toggleActive(u),
+                                  onDelete: () => _confirmDelete(u),
+                                );
+                              },
                             ),
                           ),
           ),
@@ -240,9 +462,20 @@ class _FilterChip extends StatelessWidget {
 
 class _UserTile extends StatelessWidget {
   final UserModel user;
+  final bool isSelf;
+  final VoidCallback onEdit;
+  final VoidCallback onChangeRole;
+  final VoidCallback onToggleActive;
   final VoidCallback onDelete;
 
-  const _UserTile({required this.user, required this.onDelete});
+  const _UserTile({
+    required this.user,
+    required this.isSelf,
+    required this.onEdit,
+    required this.onChangeRole,
+    required this.onToggleActive,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -251,49 +484,123 @@ class _UserTile extends StatelessWidget {
     final (IconData icon, Color color, String roleLabel, String subtitle) =
         _presentation(user);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.15),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(
-          user.name.isEmpty ? '(no name)' : user.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(user.email),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
-        isThreeLine: true,
-        trailing: PopupMenuButton<String>(
-          onSelected: (v) {
-            if (v == 'delete') onDelete();
-          },
-          itemBuilder: (_) => [
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete_outline, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete'),
-                ],
+    final inactive = !user.isActive;
+
+    return Opacity(
+      opacity: inactive ? 0.55 : 1.0,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.15),
+            child: Icon(icon, color: color),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  user.name.isEmpty ? '(no name)' : user.name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
-            ),
-          ],
+              if (inactive)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'INACTIVE',
+                    style: TextStyle(
+                      color: colorScheme.error,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(user.email),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ),
+          isThreeLine: true,
+          trailing: PopupMenuButton<String>(
+            onSelected: (v) {
+              switch (v) {
+                case 'edit':
+                  onEdit();
+                  break;
+                case 'role':
+                  onChangeRole();
+                  break;
+                case 'toggle':
+                  onToggleActive();
+                  break;
+                case 'delete':
+                  onDelete();
+                  break;
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined),
+                    SizedBox(width: 8),
+                    Text('Edit'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'role',
+                child: Row(
+                  children: [
+                    Icon(Icons.swap_horiz),
+                    SizedBox(width: 8),
+                    Text('Change role'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'toggle',
+                enabled: !(isSelf && user.isActive),
+                child: Row(
+                  children: [
+                    Icon(user.isActive
+                        ? Icons.block_outlined
+                        : Icons.check_circle_outline),
+                    const SizedBox(width: 8),
+                    Text(user.isActive ? 'Deactivate' : 'Activate'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          onTap: () => _showDetails(context, user, roleLabel),
         ),
-        onTap: () => _showDetails(context, user, roleLabel),
       ),
     );
   }
@@ -336,6 +643,7 @@ class _UserTile extends StatelessWidget {
       builder: (ctx) {
         final entries = <MapEntry<String, String>>[
           MapEntry('Role', roleLabel),
+          MapEntry('Status', user.isActive ? 'Active' : 'Inactive'),
           MapEntry('ID', user.id),
           MapEntry('Name', user.name),
           MapEntry('Email', user.email),
@@ -349,6 +657,7 @@ class _UserTile extends StatelessWidget {
             MapEntry('Goal', user.goal.name),
             MapEntry('Weight', '${user.weight} kg'),
             MapEntry('Height', '${user.height} cm'),
+            MapEntry('BMI', user.bmi.toStringAsFixed(1)),
             MapEntry('Allergies', user.allergies ?? '—'),
             MapEntry('Health', user.healthCondition ?? '—'),
           ]);
@@ -357,8 +666,11 @@ class _UserTile extends StatelessWidget {
             MapEntry('Title', user.title),
             MapEntry('Clinic', user.clinicName),
             MapEntry('Specialization', user.specialization),
-            MapEntry('Education', user.education ?? '—'),
-            MapEntry('Certificates', user.certificates ?? '—'),
+            MapEntry('Education', user.education.isEmpty ? '—' : user.education),
+            MapEntry(
+              'Certificates',
+              user.certificates.isEmpty ? '—' : user.certificates,
+            ),
           ]);
         }
 
